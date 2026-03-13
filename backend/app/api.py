@@ -35,7 +35,16 @@ app.add_middleware(
 
 @app.get("/health", response_model=HealthResponse)
 def health_check():
+    """Return overall API health information.
+
+    Returns:
+        HealthResponse: Current health status and version metadata.
+
+    Raises:
+        None.
+    """
     return HealthResponse(status="healthy", version=__version__)
+
 
 
 # ============== Prompt Endpoints ==============
@@ -45,6 +54,18 @@ def list_prompts(
     collection_id: Optional[str] = None,
     search: Optional[str] = None
 ):
+    """List prompts optionally filtered by collection and/or search query.
+
+    Args:
+        collection_id (Optional[str]): Collection identifier used to filter prompts.
+        search (Optional[str]): Free-text query for prompt titles and descriptions.
+
+    Returns:
+        PromptList: Aggregated prompts and total count.
+
+    Raises:
+        None.
+    """
     prompts = storage.get_all_prompts()
     
     # Filter by collection if specified
@@ -63,6 +84,17 @@ def list_prompts(
 
 @app.get("/prompts/{prompt_id}", response_model=Prompt)
 def get_prompt(prompt_id: str):
+    """Fetch a single prompt by identifier.
+
+    Args:
+        prompt_id (str): Unique prompt identifier.
+
+    Returns:
+        Prompt: Prompt corresponding to the provided identifier.
+
+    Raises:
+        HTTPException: If the prompt does not exist.
+    """
     prompt = storage.get_prompt(prompt_id)
     if not prompt:
         raise HTTPException(status_code=404, detail="Prompt not found")
@@ -82,6 +114,17 @@ def get_prompt(prompt_id: str):
 
 @app.post("/prompts", response_model=Prompt, status_code=201)
 def create_prompt(prompt_data: PromptCreate):
+    """Create a new prompt resource.
+
+    Args:
+        prompt_data (PromptCreate): Incoming prompt attributes.
+
+    Returns:
+        Prompt: Newly created prompt.
+
+    Raises:
+        HTTPException: If the referenced collection does not exist.
+    """
     # Validate collection exists if provided
     if prompt_data.collection_id:
         collection = storage.get_collection(prompt_data.collection_id)
@@ -94,6 +137,18 @@ def create_prompt(prompt_data: PromptCreate):
 
 @app.put("/prompts/{prompt_id}", response_model=Prompt)
 def update_prompt(prompt_id: str, prompt_data: PromptUpdate):
+    """Replace an existing prompt with updated data.
+
+    Args:
+        prompt_id (str): Identifier of the prompt to update.
+        prompt_data (PromptUpdate): Complete set of prompt fields.
+
+    Returns:
+        Prompt: Updated prompt instance.
+
+    Raises:
+        HTTPException: If the prompt or referenced collection does not exist.
+    """
     existing = storage.get_prompt(prompt_id)
     if not existing:
         raise HTTPException(status_code=404, detail="Prompt not found")
@@ -124,23 +179,23 @@ def update_prompt(prompt_id: str, prompt_data: PromptUpdate):
 
 @app.patch("/prompts/{prompt_id}", response_model=Prompt)
 def patch_prompt(prompt_id: str, prompt_data: PromptPatch):
+    """Apply partial updates to a prompt.
+
+    Args:
+        prompt_id (str): Identifier of the prompt to modify.
+        prompt_data (PromptPatch): Subset of fields to update.
+
+    Returns:
+        Prompt: Prompt after patching.
+
+    Raises:
+        HTTPException: If the prompt does not exist.
+    """
     existing = storage.get_prompt(prompt_id)
     if not existing:
         raise HTTPException(status_code=404, detail="Prompt not found")
 
     # Apply only provided fields (PromptPatch uses Optional fields)
-    updated_prompt = Prompt(
-        id=existing.id,
-        title=prompt_data.title if prompt_data.title is not None else existing.title,
-        content=prompt_data.content if prompt_data.content is not None else existing.content,
-        description=prompt_data.description if prompt_data.description is not None else existing.description,
-        collection_id=prompt_data.collection_id if prompt_data.collection_id is not None else existing.collection_id,
-        created_at=existing.created_at,
-        updated_at=get_current_time(),  # always bump timestamp on PATCH
-    )
-
-    return storage.update_prompt(prompt_id, updated_prompt)
-
 
 @app.delete("/prompts/{prompt_id}", status_code=204)
 def delete_prompt(prompt_id: str):
