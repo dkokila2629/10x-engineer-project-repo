@@ -60,6 +60,19 @@ The stack stays lightweight: FastAPI + Pydantic models, an in-memory storage lay
    pytest tests/ -v --cov=app --cov-report=term-missing
    ```
 
+## Combined frontend + backend development server
+
+To launch both services together with one command:
+
+```bash
+chmod +x start-dev.sh
+./start-dev.sh
+```
+
+- The script installs frontend dependencies, starts FastAPI on port `8000`, waits for `/health`, and then starts Vite on port `4173`.
+- Use VS Code Ports (or your browser) to open `http://localhost:4173` once Vite reports it is ready.
+- Canceling the script (Ctrl+C) stops both the backend and frontend processes cleanly.
+
 ---
 
 ## Running in GitHub Codespaces
